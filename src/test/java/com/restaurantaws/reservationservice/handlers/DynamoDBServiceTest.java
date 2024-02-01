@@ -38,7 +38,6 @@ public class DynamoDBServiceTest {
         verify(table, times(1)).putItem(any(Item.class));
     }
 
-
     @Test
     void testGetReservation() {
         // Prepare test data
