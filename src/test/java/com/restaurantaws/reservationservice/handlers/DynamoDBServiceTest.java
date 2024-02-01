@@ -60,22 +60,26 @@ public class DynamoDBServiceTest {
 
     @Test
     void testSetConfirmationStatus() {
-//        // Prepare test data
-//        Table table = mock(Table.class);
-//        DynamoDBService dynamoDBService = new DynamoDBService(table);
-//
-//        // Prepare test data
-//        String token = "token123";
-//        boolean status = true;
-//
-//        // Invoke the tested method
-//        boolean result = dynamoDBService.setConfirmationStatus(token, status);
-//
-//        // Check expected results
-//        assertTrue(result);
-//
-//        // Verify if a method dependent on another service was called
-//        verify(table, times(1)).getItem(anyString(), any());
-//        verify(table, times(1)).putItem(any(Item.class));
+        // Prepare test data
+        Table table = mock(Table.class);
+        DynamoDBService dynamoDBService = new DynamoDBService(table);
+
+        // Prepare test data
+        String token = "token123";
+        boolean status = true;
+
+        // Mock DynamoDB getItem result
+        Item mockedItem = mock(Item.class);
+        when(table.getItem(eq("tokenId"), eq(token))).thenReturn(mockedItem);
+
+        //invoke the tested method
+        boolean result = dynamoDBService.setConfirmationStatus(token, status);
+
+        // Check expected results
+        assertTrue(result);
+
+        // Verify if a method dependent on another service was called
+        verify(table, times(1)).getItem(anyString(), any());
+        verify(table, times(1)).putItem(any(Item.class));
     }
 }

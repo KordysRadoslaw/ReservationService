@@ -26,4 +26,5 @@ public class ReservationConfirmationServiceTest {
         // Verify if a method dependent on another service was called
         verify(dynamoDBService, times(1)).setConfirmationStatus(anyString(), anyBoolean());
     }
+
 }

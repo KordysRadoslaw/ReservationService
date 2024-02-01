@@ -1,5 +1,6 @@
 package com.restaurantaws.reservationservice.services;
 
+import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
@@ -14,6 +15,18 @@ public class NotificationService {
 
     public NotificationService() {
         this.sesClient = AmazonSimpleEmailServiceClientBuilder.standard().build();
+    }
+    //for testing
+    public NotificationService(AmazonSimpleEmailService sesClient) {
+        this.sesClient = sesClient;
+    }
+
+    //for testing
+    public NotificationService(AWSCredentials awsCredentials, AmazonSimpleEmailService sesClient) {
+        this.sesClient = AmazonSimpleEmailServiceClientBuilder.standard()
+                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
+                .withRegion(Regions.EU_WEST_1)
+                .build();
     }
 
     public void sendEmail(String recipientEmail, String subject, String messageBody) {

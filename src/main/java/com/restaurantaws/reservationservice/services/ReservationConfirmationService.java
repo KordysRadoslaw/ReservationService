@@ -19,7 +19,6 @@ public class ReservationConfirmationService {
         }else{
             return false;
         }
-
     }
 
 

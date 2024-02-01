@@ -15,6 +15,9 @@ public class GenerateIdTest {
 
         // Check expected results
         assertNotNull(result);
+
+        // Check if the result matches a regular expression
+        //"\\d+-\\d+" means a sequence of digits, followed by a dash, followed by another sequence of digits
         assertTrue(result.matches("\\d+-\\d+"));
     }
 }
