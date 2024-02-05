@@ -11,7 +11,7 @@ public class DynamoDBService {
         this.table = table;
 
     }
-    public boolean saveData(String reservationId, String date, String firstName, String lastName, String numberOfGuests, String email, String tokenId) {
+    public boolean saveData(String reservationId, String date, String firstName, String lastName, String numberOfGuests, String email, String tokenId, String status) {
         try {
             Item item = new Item()
                     .withPrimaryKey("reservationId", reservationId)
@@ -20,7 +20,8 @@ public class DynamoDBService {
                     .withString("lastName", lastName)
                     .withString("numberOfGuests", numberOfGuests)
                     .withString("email", email)
-                    .withString("tokenId", tokenId);
+                    .withString("tokenId", tokenId)
+                    .withString("status", status);
 
             table.putItem(item);
             return true;

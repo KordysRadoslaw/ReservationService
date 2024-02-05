@@ -101,6 +101,7 @@ public class PostHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
         String numberOfGuests = reservationDetails.get("numberOfGuests");
         String email = reservationDetails.get("email");
         String tokenId = UUID.randomUUID().toString();
+        String status = "PENDING";
 
         if (isConfirmed) {
             returnValue.put("confirmed", "true");
@@ -130,12 +131,13 @@ public class PostHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
         returnValue.put("numberOfGuests", numberOfGuests);
         returnValue.put("email", email);
         returnValue.put("tokenId", tokenId);
+        returnValue.put("status", status);
 
         boolean confirmationResult = confirmationService.confirmReservation(tokenId);
         returnValue.put("confirmed", String.valueOf(confirmationResult));
 
         try {
-            dynamoDBService.saveData(reservationDetails.get("reservationId"), formattedDateTime, firstName, lastName, numberOfGuests, email, tokenId);
+            dynamoDBService.saveData(reservationDetails.get("reservationId"), formattedDateTime, firstName, lastName, numberOfGuests, email, tokenId, status);
             emailVerification.sendVerifyEmail(email);
         } catch (Exception e) {
             APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
@@ -174,12 +176,14 @@ public class PostHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
                 String lastName = reservationDetails.get("lastName");
                 String numberOfGuests = reservationDetails.get("numberOfGuests");
                 String email = reservationDetails.get("email");
+                String status = reservationDetails.get("status");
 
                 Map<String, String> returnValue = new HashMap<>();
                 returnValue.put("reservationId", reservationId);
                 returnValue.put("lastName", lastName);
                 returnValue.put("numberOfGuests", numberOfGuests);
                 returnValue.put("email", email);
+                returnValue.put("status", status);
 
 
                 APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
@@ -192,11 +196,7 @@ public class PostHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
                 return response;
             }catch(Exception e){
                 logger.log("blad przy pobieraniu rezerwacji " + e);
-                APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
-                response.setStatusCode(500);
-                response.setBody("Error while getting data from DynamoDB: " + e.getMessage());
-                return response;
-
+                return createErrorResponse(400, "Error while getting reservation details");
             }
         }
 

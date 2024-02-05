@@ -77,7 +77,7 @@ public class PostHandlerTests{
 
         when(context.getLogger()).thenReturn(logger);
         when(dynamoDB.getTable(any())).thenReturn(table);
-        when(dynamoDBService.saveData(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(true);
+        when(dynamoDBService.saveData(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(true);
 
 
         postHandler = new PostHandler(amazonDynamoDB, dynamoDB, table, dynamoDBService, notificationService, confirmationService, emailVerification, sesClient);
@@ -97,7 +97,7 @@ public class PostHandlerTests{
                 }
                 """);
 
-        when(dynamoDBService.saveData(any(), any(), any(), any(), any(), any(), any())).thenReturn(true);
+        when(dynamoDBService.saveData(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(true);
         APIGatewayProxyResponseEvent response = postHandler.handleRequest(requestEvent, context);
         assertEquals(200, response.getStatusCode());
     }
@@ -113,7 +113,7 @@ public class PostHandlerTests{
                 }
                 """);
 
-        when(dynamoDBService.saveData(any(), any(), any(), any(), any(), any(), any())).thenReturn(true);
+        when(dynamoDBService.saveData(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(true);
         APIGatewayProxyResponseEvent response = postHandler.handleRequest(requestEvent, context);
 
         assertEquals(400, response.getStatusCode());
@@ -130,7 +130,7 @@ public class PostHandlerTests{
                 }
                 """);
 
-        when(dynamoDBService.saveData(any(), any(), any(), any(), any(), any(), any())).thenReturn(true);
+        when(dynamoDBService.saveData(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(true);
         APIGatewayProxyResponseEvent response = postHandler.handleRequest(requestEvent, context);
 
         assertEquals(400, response.getStatusCode());
@@ -147,7 +147,7 @@ public class PostHandlerTests{
                 }
                 """);
 
-        when(dynamoDBService.saveData(any(), any(), any(), any(), any(), any(), any())).thenReturn(true);
+        when(dynamoDBService.saveData(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(true);
         APIGatewayProxyResponseEvent response = postHandler.handleRequest(requestEvent, context);
 
         assertEquals(400, response.getStatusCode());

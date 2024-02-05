@@ -26,10 +26,11 @@ public class DynamoDBServiceTest {
         String numberOfGuests = "2";
         String email = "john.doe@example.com";
         String tokenId = "token123";
+        String status = "PENDING";
 
         // Invoke the tested method
         boolean result = dynamoDBService.saveData(
-                reservationId, date, firstName, lastName, numberOfGuests, email, tokenId);
+                reservationId, date, firstName, lastName, numberOfGuests, email, tokenId, status);
 
         // Check expected results
         assertTrue(result);
