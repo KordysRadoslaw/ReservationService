@@ -101,7 +101,7 @@ public class PostHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
         String numberOfGuests = reservationDetails.get("numberOfGuests");
         String email = reservationDetails.get("email");
         String tokenId = UUID.randomUUID().toString();
-        String status = "PENDING";
+        String reservationStatus = "PENDING";
 
         if (isConfirmed) {
             returnValue.put("confirmed", "true");
@@ -131,13 +131,13 @@ public class PostHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
         returnValue.put("numberOfGuests", numberOfGuests);
         returnValue.put("email", email);
         returnValue.put("tokenId", tokenId);
-        returnValue.put("status", status);
+        returnValue.put("reservationStatus", reservationStatus);
 
         boolean confirmationResult = confirmationService.confirmReservation(tokenId);
         returnValue.put("confirmed", String.valueOf(confirmationResult));
 
         try {
-            dynamoDBService.saveData(reservationDetails.get("reservationId"), formattedDateTime, firstName, lastName, numberOfGuests, email, tokenId, status);
+            dynamoDBService.saveData(reservationDetails.get("reservationId"), formattedDateTime, firstName, lastName, numberOfGuests, email, tokenId, reservationStatus);
             emailVerification.sendVerifyEmail(email);
         } catch (Exception e) {
             APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
@@ -176,14 +176,14 @@ public class PostHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
                 String lastName = reservationDetails.get("lastName");
                 String numberOfGuests = reservationDetails.get("numberOfGuests");
                 String email = reservationDetails.get("email");
-                String status = reservationDetails.get("status");
+                String reservationStatus = reservationDetails.get("reservationStatus");
 
                 Map<String, String> returnValue = new HashMap<>();
                 returnValue.put("reservationId", reservationId);
                 returnValue.put("lastName", lastName);
                 returnValue.put("numberOfGuests", numberOfGuests);
                 returnValue.put("email", email);
-                returnValue.put("status", status);
+                returnValue.put("reservationStatus", reservationStatus);
 
 
                 APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
@@ -203,9 +203,9 @@ public class PostHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
         return createErrorResponse(400, "Unsupported HTTP method");
     }
 
-    private APIGatewayProxyResponseEvent createErrorResponse(int status, String errorMessage){
+    private APIGatewayProxyResponseEvent createErrorResponse(int reservationStatus, String errorMessage){
         APIGatewayProxyResponseEvent errorResponse = new APIGatewayProxyResponseEvent();
-        errorResponse.setStatusCode(status);
+        errorResponse.setStatusCode(reservationStatus);
         errorResponse.setBody(errorMessage);
         return errorResponse;
     }
