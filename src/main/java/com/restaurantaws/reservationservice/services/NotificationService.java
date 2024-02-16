@@ -1,63 +1,54 @@
 package com.restaurantaws.reservationservice.services;
 
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
-import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClientBuilder;
-import com.amazonaws.services.simpleemail.model.*;
+import com.amazonaws.services.simpleemail.model.Body;
+import com.amazonaws.services.simpleemail.model.Content;
+import com.amazonaws.services.simpleemail.model.Destination;
+import com.amazonaws.services.simpleemail.model.Message;
+import com.amazonaws.services.simpleemail.model.SendEmailRequest;
+import com.amazonaws.services.simpleemail.model.SendEmailResult;
+import com.restaurantaws.reservationservice.models.Notification;
 
 public class NotificationService {
-
     private final AmazonSimpleEmailService sesClient;
 
     public NotificationService() {
-        this.sesClient = AmazonSimpleEmailServiceClientBuilder.standard().build();
+        this.sesClient = (AmazonSimpleEmailService)AmazonSimpleEmailServiceClientBuilder.standard().build();
     }
-    //for testing
+
     public NotificationService(AmazonSimpleEmailService sesClient) {
         this.sesClient = sesClient;
     }
 
-    //for testing
-    public NotificationService(AWSCredentials awsCredentials, AmazonSimpleEmailService sesClient) {
-        this.sesClient = AmazonSimpleEmailServiceClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
-                .withRegion(Regions.EU_WEST_1)
-                .build();
+    public NotificationService(AWSCredentials awsCredentials) {
+        this
+
+                .sesClient = (AmazonSimpleEmailService)((AmazonSimpleEmailServiceClientBuilder)((AmazonSimpleEmailServiceClientBuilder)AmazonSimpleEmailServiceClientBuilder.standard().withCredentials((AWSCredentialsProvider)new AWSStaticCredentialsProvider(awsCredentials))).withRegion(Regions.EU_WEST_1)).build();
+    }
+
+    public void sendNotification(Notification notification) {
+        String recipientEmail = notification.getRecipientEmail();
+        String subject = notification.getSubject();
+        String messageBody = notification.getMessageBody();
+        try {
+            sendEmail(recipientEmail, subject, messageBody);
+        } catch (Exception e) {
+            throw new RuntimeException("Error during email sending: " + e.getMessage());
+        }
     }
 
     public void sendEmail(String recipientEmail, String subject, String messageBody) {
-
-        String accessKey = System.getenv("AWS_ACCESS_KEY_ID");
-        String secretKey = System.getenv("AWS_SECRET_ACCESS_KEY");
-
-        BasicAWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
-        AmazonSimpleEmailService client = AmazonSimpleEmailServiceClient.builder()
-                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
-                .withRegion(Regions.EU_WEST_1)
-                .build();
-
-        // create email
-        Destination destination = new Destination().withToAddresses(recipientEmail);
-        Content subjectContent = new Content().withData(subject);
-        Body body = new Body().withText(new Content().withData(messageBody));
-        Message message = new Message().withSubject(subjectContent).withBody(body);
-
-        // create email request
-        SendEmailRequest request = new SendEmailRequest()
-                .withDestination(destination)
-                .withMessage(message)
-                .withSource("kordys.radoslaw@gmail.com");
-
-        // send email using the provided client
-        SendEmailResult result = client.sendEmail(request);
-
-        // print email sent confirmation
+        Destination destination = (new Destination()).withToAddresses(new String[] { recipientEmail });
+        Content subjectContent = (new Content()).withData(subject);
+        Body body = (new Body()).withText((new Content()).withData(messageBody));
+        Message message = (new Message()).withSubject(subjectContent).withBody(body);
+        SendEmailRequest request = (new SendEmailRequest()).withDestination(destination).withMessage(message).withSource("kordys.radoslaw@gmail.com");
+        SendEmailResult result = this.sesClient.sendEmail(request);
         System.out.println("Email sent! Id: " + result.getMessageId());
     }
-
-
 }

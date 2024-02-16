@@ -11,15 +11,16 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
 import com.google.gson.Gson;
-import com.restaurantaws.reservationservice.services.*;
-
-import java.security.SecureRandom;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import com.restaurantaws.reservationservice.models.Reservation;
+import com.restaurantaws.reservationservice.repositories.ReservationRepository;
+import com.restaurantaws.reservationservice.repositories.ReservationRepositoryImpl;
+import com.restaurantaws.reservationservice.services.DynamoDBService;
+import com.restaurantaws.reservationservice.services.EmailVerification;
+import com.restaurantaws.reservationservice.services.GenerateId;
+import com.restaurantaws.reservationservice.services.NotificationService;
+import com.restaurantaws.reservationservice.services.ReservationConfirmationService;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 public class PostHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     private final DynamoDBService dynamoDBService;
@@ -30,26 +31,28 @@ public class PostHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
 
     private final EmailVerification emailVerification;
 
+    private final ReservationRepository reservationRepository;
+
     AmazonDynamoDB amazonDynamoDB;
+
     DynamoDB dynamoDB;
+
     Table table;
 
     AmazonSimpleEmailService sesClient;
 
-
     public PostHandler() {
-        AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClient.builder().build();
+        AmazonDynamoDB amazonDynamoDB = (AmazonDynamoDB)AmazonDynamoDBClient.builder().build();
         DynamoDB dynamoDB = new DynamoDB(amazonDynamoDB);
         Table table = dynamoDB.getTable("RestaurantReservation");
-
-
         this.dynamoDBService = new DynamoDBService(table);
         this.notificationService = new NotificationService();
-        this.confirmationService = new ReservationConfirmationService(dynamoDBService);
+        this.confirmationService = new ReservationConfirmationService(this.dynamoDBService);
         this.emailVerification = new EmailVerification();
+        this.reservationRepository = (ReservationRepository)new ReservationRepositoryImpl(dynamoDB);
     }
 
-    public PostHandler(AmazonDynamoDB amazonDynamoDB, DynamoDB dynamoDB, Table table, DynamoDBService dynamoDBService, NotificationService notificationService, ReservationConfirmationService confirmationService, EmailVerification emailVerification, AmazonSimpleEmailService sesClient){
+    public PostHandler(AmazonDynamoDB amazonDynamoDB, DynamoDB dynamoDB, Table table, DynamoDBService dynamoDBService, NotificationService notificationService, ReservationConfirmationService confirmationService, EmailVerification emailVerification, AmazonSimpleEmailService sesClient, ReservationRepository reservationRepository) {
         this.dynamoDBService = dynamoDBService;
         this.notificationService = notificationService;
         this.confirmationService = confirmationService;
@@ -58,156 +61,65 @@ public class PostHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
         this.dynamoDB = dynamoDB;
         this.table = table;
         this.sesClient = sesClient;
+        this.reservationRepository = reservationRepository;
     }
 
-
-    @Override
-    public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent, final Context context) {
-
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent, Context context) {
         LambdaLogger logger = context.getLogger();
-        logger.log("Handling http post for /restaurant API endpoint");
-
-        if("/restaurant/getReservation".equals(apiGatewayProxyRequestEvent.getPath())){
+        logger.log("Handling http post for /restaurant handleRequest API endpoint");
+        if ("/restaurant/getReservation".equals(apiGatewayProxyRequestEvent.getPath()))
             return getReservation(apiGatewayProxyRequestEvent, context);
-
-        }
         String requestBody = apiGatewayProxyRequestEvent.getBody();
         Gson gson = new Gson();
-
-
-        Map<String, String> reservationDetails = gson.fromJson(requestBody, Map.class);
-        String reservationId = GenerateId.generateUniqueId();
-
-
-        if (reservationDetails != null) {
-            reservationDetails.put("reservationId", reservationId);
-        }
-
-        //check confirmation email
-        boolean isConfirmed = false;
-        if (reservationDetails.containsKey("confirmed") && reservationDetails.get("confirmed").equalsIgnoreCase("true")) {
-            isConfirmed = true;
-        }
-
-        LocalDateTime currentDateTime = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        String formattedDateTime = currentDateTime.format(formatter);
-
-        logger.log("Request body: " + requestBody);
-
-        Map<String, String> returnValue = new HashMap<>();
-        String firstName = reservationDetails.get("firstName");
-        String lastName = reservationDetails.get("lastName");
-        String numberOfGuests = reservationDetails.get("numberOfGuests");
-        String email = reservationDetails.get("email");
-        String tokenId = UUID.randomUUID().toString();
-        String reservationStatus = "PENDING";
-
-        if (isConfirmed) {
-            returnValue.put("confirmed", "true");
-
-            // Send a confirmation email
-            //at the moment it does not work
-            String subject = "Reservation Confirmation";
-            String confirmationLink = "Your reservation has been accepted. press this link to confirm. \n" +
-                    "https://774oectd4g.execute-api.eu-west-1.amazonaws.com/restaurants/confirmation?token="+tokenId;
-
-            notificationService.sendEmail(email, subject, confirmationLink);
-        } else {
-            returnValue.put("confirmed", "false");
-        }
-
-        if (firstName == null || lastName == null || numberOfGuests == null || email == null) {
-            APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
-            response.setStatusCode(400);
-            response.setBody("Missing required fields.");
-            return response;
-        }
-
-        returnValue.put("reservationId", reservationDetails.get("reservationId"));
-        returnValue.put("date", formattedDateTime);
-        returnValue.put("firstName", firstName);
-        returnValue.put("lastName", lastName);
-        returnValue.put("numberOfGuests", numberOfGuests);
-        returnValue.put("email", email);
-        returnValue.put("tokenId", tokenId);
-        returnValue.put("reservationStatus", reservationStatus);
-
-        boolean confirmationResult = confirmationService.confirmReservation(tokenId);
-        returnValue.put("confirmed", String.valueOf(confirmationResult));
-
+        Reservation reservation = (Reservation)gson.fromJson(requestBody, Reservation.class);
+        reservation.setReservationStatus("PENDING");
+        reservation.setConfirmation(false);
+        reservation.setReservationId(GenerateId.generateUniqueId());
+        if (reservation.getFirstName() == null || reservation.getLastName() == null || reservation.getNumberOfGuests() == null || reservation.getEmail() == null)
+            return createErrorResponse(400, "Missing required fields.");
         try {
-            dynamoDBService.saveData(reservationDetails.get("reservationId"), formattedDateTime, firstName, lastName, numberOfGuests, email, tokenId, reservationStatus);
-            emailVerification.sendVerifyEmail(email);
+            this.reservationRepository.saveReservation(reservation);
+            this.emailVerification.sendVerifyEmail(reservation.getEmail());
         } catch (Exception e) {
-            APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
-            response.setBody("Error while saving data to DynamoDB: " + e.getMessage());
-            response.setStatusCode(500);
-            return response;
+            logger.log("Error while saving reservation: " + e);
+            return createErrorResponse(500, "Error while saving reservation: " + e);
         }
-
         APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
-        response.setStatusCode(200);
-        response.setBody(gson.toJson(returnValue));
-
-        logger.log("return value: " + returnValue);
-        logger.log("return value: " + response.getBody());
+        response.setStatusCode(Integer.valueOf(200));
+        response.setBody(gson.toJson(reservation));
         Map<String, String> responseHeaders = new HashMap<>();
         responseHeaders.put("Content-Type", "application/json");
         response.setHeaders(responseHeaders);
-
+        logger.log("return value: " + response.getBody());
         return response;
     }
 
-    public APIGatewayProxyResponseEvent getReservation(APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent, Context context) {
+    private APIGatewayProxyResponseEvent getReservation(APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent, Context context) {
         LambdaLogger logger = context.getLogger();
         logger.log("Handling http get for /restaurant/getReservation API endpoint");
-
-
-        if("GET".equals(apiGatewayProxyRequestEvent.getHttpMethod())){
-            try{
+        if ("GET".equals(apiGatewayProxyRequestEvent.getHttpMethod()))
+            try {
                 Gson gson = new Gson();
-                String couponId = apiGatewayProxyRequestEvent.getQueryStringParameters().get("reservationId");
-
-                String reservationDetailsJson = dynamoDBService.getReservation(couponId);
-                Map<String, String> reservationDetails = gson.fromJson(reservationDetailsJson, Map.class);
-
-                String reservationId = reservationDetails.get("reservationId");
-                String lastName = reservationDetails.get("lastName");
-                String numberOfGuests = reservationDetails.get("numberOfGuests");
-                String email = reservationDetails.get("email");
-                String reservationStatus = reservationDetails.get("reservationStatus");
-
-                Map<String, String> returnValue = new HashMap<>();
-                returnValue.put("reservationId", reservationId);
-                returnValue.put("lastName", lastName);
-                returnValue.put("numberOfGuests", numberOfGuests);
-                returnValue.put("email", email);
-                returnValue.put("reservationStatus", reservationStatus);
-
-
+                String reservationId = (String)apiGatewayProxyRequestEvent.getQueryStringParameters().get("reservationId");
+                Reservation reservation = this.reservationRepository.getReservationById(reservationId);
                 APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
-                response.setStatusCode(200);
-                response.setBody(gson.toJson(returnValue));
+                response.setStatusCode(Integer.valueOf(200));
+                response.setBody(gson.toJson(reservation));
                 Map<String, String> responseHeaders = new HashMap<>();
                 responseHeaders.put("Content-Type", "application/json");
                 response.setHeaders(responseHeaders);
-
                 return response;
-            }catch(Exception e){
-                logger.log("blad przy pobieraniu rezerwacji " + e);
+            } catch (Exception e) {
+                logger.log("Error while getting reservation details: " + e);
                 return createErrorResponse(400, "Error while getting reservation details");
             }
-        }
-
-        return createErrorResponse(400, "Unsupported HTTP method");
+        throw new RuntimeException("Unsupported HTTP method");
     }
 
-    private APIGatewayProxyResponseEvent createErrorResponse(int reservationStatus, String errorMessage){
+    private APIGatewayProxyResponseEvent createErrorResponse(int reservationStatus, String errorMessage) {
         APIGatewayProxyResponseEvent errorResponse = new APIGatewayProxyResponseEvent();
-        errorResponse.setStatusCode(reservationStatus);
+        errorResponse.setStatusCode(Integer.valueOf(reservationStatus));
         errorResponse.setBody(errorMessage);
         return errorResponse;
     }
-
 }

@@ -10,6 +10,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
 import com.restaurantaws.reservationservice.handlers.PostHandler;
+import com.restaurantaws.reservationservice.repositories.ReservationRepository;
 import com.restaurantaws.reservationservice.services.DynamoDBService;
 import com.restaurantaws.reservationservice.services.EmailVerification;
 import com.restaurantaws.reservationservice.services.NotificationService;
@@ -60,6 +61,9 @@ public class PostHandlerTests{
     @Mock
     private AmazonSimpleEmailService sesClient;
 
+    @Mock
+    private ReservationRepository reservationRepository;
+
 
     @Before
     public void setUp(){
@@ -74,13 +78,15 @@ public class PostHandlerTests{
         confirmationService = mock(ReservationConfirmationService.class);
         emailVerification = mock(EmailVerification.class);
         sesClient = mock(AmazonSimpleEmailService.class);
+        reservationRepository = mock(ReservationRepository.class);
+
 
         when(context.getLogger()).thenReturn(logger);
         when(dynamoDB.getTable(any())).thenReturn(table);
         when(dynamoDBService.saveData(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(true);
 
 
-        postHandler = new PostHandler(amazonDynamoDB, dynamoDB, table, dynamoDBService, notificationService, confirmationService, emailVerification, sesClient);
+        postHandler = new PostHandler(amazonDynamoDB, dynamoDB, table, dynamoDBService, notificationService, confirmationService, emailVerification, sesClient, reservationRepository);
 
 
 
