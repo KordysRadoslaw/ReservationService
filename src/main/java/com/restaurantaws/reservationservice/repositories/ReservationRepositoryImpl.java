@@ -19,7 +19,6 @@ public class ReservationRepositoryImpl implements ReservationRepository {
             Item item = this.reservationTable.getItem("reservationId", reservationId);
             if (item != null)
                 return createReservationFromItem(item);
-
             return null;
         } catch (Exception e) {
             throw new RuntimeException("Error getting reservation by id: " + e);
