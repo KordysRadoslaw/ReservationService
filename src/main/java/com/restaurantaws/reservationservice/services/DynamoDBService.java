@@ -63,6 +63,7 @@ public class DynamoDBService {
      * @param status
      * @return boolean value indicating whether the confirmation status was set successfully or not.
      */
+
     public boolean setConfirmationStatus(String token, boolean status) {
         try {
             Item item = this.table.getItem("tokenId", token);
