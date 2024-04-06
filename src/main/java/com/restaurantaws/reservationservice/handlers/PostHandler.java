@@ -22,6 +22,9 @@ import com.restaurantaws.reservationservice.services.ReservationConfirmationServ
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * PostHandler class implements RequestHandler interface and handles the POST requests for the /restaurant API endpoint.
+ */
 public class PostHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     private final DynamoDBService dynamoDBService;
 
@@ -64,6 +67,13 @@ public class PostHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
         this.reservationRepository = reservationRepository;
     }
 
+    /**
+     * handleRequest method handles the POST requests for the /restaurant API endpoint.
+     *
+     * @param apiGatewayProxyRequestEvent The APIGatewayProxyRequestEvent object containing the request details.
+     * @param context The Context object containing the Lambda runtime details.
+     * @return The APIGatewayProxyResponseEvent object containing the response details.
+     */
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent, Context context) {
         LambdaLogger logger = context.getLogger();
         logger.log("Handling http post for /restaurant handleRequest API endpoint");
@@ -94,6 +104,13 @@ public class PostHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
         return response;
     }
 
+    /**
+     * getReservation method handles the GET requests for the /restaurant/getReservation API endpoint.
+     *
+     * @param apiGatewayProxyRequestEvent The APIGatewayProxyRequestEvent object containing the request details.
+     * @param context The Context object containing the Lambda runtime details.
+     * @return The APIGatewayProxyResponseEvent object containing the response details.
+     */
     private APIGatewayProxyResponseEvent getReservation(APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent, Context context) {
         LambdaLogger logger = context.getLogger();
         logger.log("Handling http get for /restaurant/getReservation API endpoint");
@@ -116,6 +133,13 @@ public class PostHandler implements RequestHandler<APIGatewayProxyRequestEvent, 
         throw new RuntimeException("Unsupported HTTP method");
     }
 
+    /**
+     * createErrorResponse method creates an APIGatewayProxyResponseEvent object with the specified error status and message.
+     *
+     * @param reservationStatus The error status code.
+     * @param errorMessage The error message.
+     * @return The APIGatewayProxyResponseEvent object with the specified error status and message.
+     */
     private APIGatewayProxyResponseEvent createErrorResponse(int reservationStatus, String errorMessage) {
         APIGatewayProxyResponseEvent errorResponse = new APIGatewayProxyResponseEvent();
         errorResponse.setStatusCode(Integer.valueOf(reservationStatus));

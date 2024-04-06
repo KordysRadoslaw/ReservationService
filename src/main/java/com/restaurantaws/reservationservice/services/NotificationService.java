@@ -14,6 +14,9 @@ import com.amazonaws.services.simpleemail.model.SendEmailRequest;
 import com.amazonaws.services.simpleemail.model.SendEmailResult;
 import com.restaurantaws.reservationservice.models.Notification;
 
+/**
+ * NotificationService class.
+ */
 public class NotificationService {
     private final AmazonSimpleEmailService sesClient;
 
@@ -31,6 +34,11 @@ public class NotificationService {
                 .sesClient = (AmazonSimpleEmailService)((AmazonSimpleEmailServiceClientBuilder)((AmazonSimpleEmailServiceClientBuilder)AmazonSimpleEmailServiceClientBuilder.standard().withCredentials((AWSCredentialsProvider)new AWSStaticCredentialsProvider(awsCredentials))).withRegion(Regions.EU_WEST_1)).build();
     }
 
+    /**
+     * Send notification.
+     * @param notification Notification object.
+     */
+
     public void sendNotification(Notification notification) {
         String recipientEmail = notification.getRecipientEmail();
         String subject = notification.getSubject();
@@ -42,6 +50,12 @@ public class NotificationService {
         }
     }
 
+    /**
+     * Send email.
+     * @param recipientEmail
+     * @param subject
+     * @param messageBody
+     */
     public void sendEmail(String recipientEmail, String subject, String messageBody) {
         Destination destination = (new Destination()).withToAddresses(new String[] { recipientEmail });
         Content subjectContent = (new Content()).withData(subject);

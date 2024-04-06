@@ -7,6 +7,10 @@ import com.restaurantaws.reservationservice.models.Reservation;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+
+/**
+ * Implementation of the ReservationRepository interface
+ */
 public class ReservationRepositoryImpl implements ReservationRepository {
     private final Table reservationTable;
 
@@ -14,6 +18,9 @@ public class ReservationRepositoryImpl implements ReservationRepository {
         this.reservationTable = dynamoDB.getTable("RestaurantReservation");
     }
 
+    /**
+     * {inheritDoc}
+     */
     public Reservation getReservationById(String reservationId) {
         try {
             Item item = this.reservationTable.getItem("reservationId", reservationId);
@@ -25,6 +32,9 @@ public class ReservationRepositoryImpl implements ReservationRepository {
         }
     }
 
+    /**
+     * {inheritDoc}
+     */
     public void saveReservation(Reservation reservation) {
         LocalDateTime currentDateTime = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -37,6 +47,11 @@ public class ReservationRepositoryImpl implements ReservationRepository {
         }
     }
 
+    /**
+     * Creates a reservation from an item
+     * @param item
+     * @return
+     */
     private Reservation createReservationFromItem(Item item) {
         Reservation reservation = new Reservation();
         reservation.setReservationId(item.getString("reservationId"));

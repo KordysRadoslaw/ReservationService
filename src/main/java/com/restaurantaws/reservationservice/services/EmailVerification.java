@@ -5,6 +5,9 @@ import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient;
 import com.amazonaws.services.simpleemail.model.SendCustomVerificationEmailRequest;
 import com.amazonaws.services.simpleemail.model.VerifyEmailAddressRequest;
 
+/**
+ * EmailVerification class is responsible for sending verification emails to users.
+ */
 public class EmailVerification {
     public void sendVerifyEmail(String email) {
         AmazonSimpleEmailService sesClient = (AmazonSimpleEmailService)AmazonSimpleEmailServiceClient.builder().build();

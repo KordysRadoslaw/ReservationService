@@ -3,6 +3,9 @@ package com.restaurantaws.reservationservice.services;
 import java.security.SecureRandom;
 import java.time.Instant;
 
+/**
+ * GenerateId class is used to generate unique IDs for the reservations.
+ */
 public class GenerateId {
 
     private static final SecureRandom random = new SecureRandom();
